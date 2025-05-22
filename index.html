@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8" />
+    <title>Casa de Pariuri Note</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+            text-align: center;
+        }
+        ul#meniu-elevi {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        ul#meniu-elevi li a {
+            text-decoration: none;
+            padding: 8px 15px;
+            background-color: #4caf50;
+            color: white;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        ul#meniu-elevi li a:hover {
+            background-color: #45a049;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 700px;
+            margin: 0 auto 20px auto;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+            min-width: 40px;
+        }
+        th {
+            background-color: #4caf50;
+            color: white;
+        }
+        .pariuri {
+            margin-bottom: 20px;
+        }
+        .pariuri span {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        #butoane-note {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        button.note-btn {
+            padding: 10px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+        }
+        button.note-btn.selected {
+            background-color: #f39c12;
+            color: black;
+        }
+        #calculeaza-castig {
+            padding: 10px 25px;
+            background-color: #4caf50;
+            border: none;
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #calculeaza-castig:hover {
+            background-color: #45a049;
+        }
+        #rezultat {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            white-space: pre-line;
+        }
+        label input[type=number] {
+            width: 100px;
+            font-size: 16px;
+            padding: 5px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Casa de Pariuri Note</h1>
+
+<ul id="meniu-elevi">
+    <li><a href="#" data-elev="rares">Rares</a></li>
+    <li><a href="#" data-elev="sim">Sim</a></li>
+    <li><a href="#" data-elev="seby">Seby</a></li>
+    <li><a href="#" data-elev="secu">Secu</a></li>
+    <li><a href="#" data-elev="nica">Nica</a></li>
+</ul>
+
+<h2 id="titlu-elev">Alege un elev</h2>
+
+<table id="tabel-cote" style="display:none;">
+    <thead>
+    <tr>
+        <th>Elev / Nota</th>
+        <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+        <th>6</th><th>7</th><th>8</th><th>9</th><th>10</th>
+    </tr>
+    </thead>
+    <tbody id="body-cote"></tbody>
+</table>
+
+<div class="pariuri" id="sectiune-pariu" style="display:none;">
+    <span>Pariaza pe nota/note (apasa pentru selectare):</span>
+    <div id="butoane-note"></div>
+    <label>
+        Suma pariata (lei):
+        <input type="number" id="suma-pariata" value="10" min="1" />
+    </label>
+    <br><br>
+    <button id="calculeaza-castig">Calculeaza castig</button>
+</div>
+
+<div id="rezultat"></div>
+
+<script>
+    const cote = {
+        rares: [40,25,12,6,3,4.5,7,15,50,60],
+        sim:   [60,40,20,15,12,8,3.5,2.5,5.5,6.5],
+        seby:  [50, 30, 15, 10, 7, 6, 5, 4, 3, 2],
+        secu:  [55, 35, 18, 12, 8, 7, 6, 5, 4, 3],
+        nica:  [45, 28, 14, 9, 6, 5, 4, 3, 2.5, 2]
+    };
+
+    const numeElevi = {
+        rares: "Rares",
+        sim: "Sim",
+        seby: "Seby",
+        secu: "Secu",
+        nica: "Nica"
+    };
+
+    const meniuElevi = document.querySelectorAll('#meniu-elevi a');
+    const titluElev = document.getElementById('titlu-elev');
+    const tabelCote = document.getElementById('tabel-cote');
+    const bodyCote = document.getElementById('body-cote');
+    const sectiunePariu = document.getElementById('sectiune-pariu');
+    const butoaneNoteContainer = document.getElementById('butoane-note');
+    const btnCalculeaza = document.getElementById('calculeaza-castig');
+    const sumaPariataInput = document.getElementById('suma-pariata');
+    const rezultatDiv = document.getElementById('rezultat');
+
+    let elevCurent = null;
+    let noteSelectate = new Set();
+
+    // Genereaza butoane note 1-10
+    function genereazaButoaneNote() {
+        butoaneNoteContainer.innerHTML = '';
+        for(let i=1; i<=10; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i;
+            btn.classList.add('note-btn');
+            btn.dataset.nota = i;
+            btn.type = 'button';
+            btn.addEventListener('click', () => {
+                if(noteSelectate.has(i)) {
+                    noteSelectate.delete(i);
+                    btn.classList.remove('selected');
+                } else {
+                    noteSelectate.add(i);
+                    btn.classList.add('selected');
+                }
+                rezultatDiv.textContent = '';
+            });
+            butoaneNoteContainer.appendChild(btn);
+        }
+    }
+
+    meniuElevi.forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            elevCurent = link.dataset.elev;
+            titluElev.textContent = "Cote pentru elevul: " + numeElevi[elevCurent];
+            afiseazaTabelCote(elevCurent);
+            tabelCote.style.display = 'table';
+            sectiunePariu.style.display = 'block';
+            rezultatDiv.textContent = '';
+            noteSelectate.clear();
+            deselecteazaToateButoanele();
+        });
+    });
+
+    function afiseazaTabelCote(elev) {
+        bodyCote.innerHTML = '';
+        const coteElev = cote[elev];
+        if(!coteElev) {
+            bodyCote.innerHTML = '<tr><td colspan="11">Nu exista cote pentru acest elev!</td></tr>';
+            return;
+        }
+        const row = document.createElement('tr');
+        const th = document.createElement('th');
+        th.textContent = numeElevi[elev] || elev;
+        row.appendChild(th);
+
+        coteElev.forEach(cota => {
+            const td = document.createElement('td');
+            td.textContent = cota;
+            row.appendChild(td);
+        });
+
+        bodyCote.appendChild(row);
+    }
+
+    function deselecteazaToateButoanele() {
+        const butoane = butoaneNoteContainer.querySelectorAll('button.note-btn');
+        butoane.forEach(btn => btn.classList.remove('selected'));
+    }
+
+    btnCalculeaza.addEventListener('click', () => {
+        if(!elevCurent) {
+            alert('Alege un elev mai intai!');
+            return;
+        }
+        if(noteSelectate.size === 0) {
+            alert('Selecteaza cel putin o nota pe care vrei sa pariezi!');
+            return;
+        }
+        const suma = parseFloat(sumaPariataInput.value);
+        if(isNaN(suma) || suma <= 0) {
+            alert('Introdu o suma valida pentru pariu!');
+            return;
+        }
+
+        const nrNote = noteSelectate.size;
+        const sumaPerNota = suma / nrNote;
+        let mesaj = `${numeElevi[elevCurent]} - Notele selectate: ${Array.from(noteSelectate).join(', ')}\n`;
+        let totalCastig = 0;
+
+        noteSelectate.forEach(nota => {
+            const cota = cote[elevCurent][nota - 1];
+            const castigNota = sumaPerNota * cota;
+            totalCastig += castigNota;
+            mesaj += `Nota ${nota}: pariezi ${sumaPerNota.toFixed(2)} lei, castigi ${castigNota.toFixed(2)} lei\n`;
+        });
+
+        mesaj += `\nCastig total: ${totalCastig.toFixed(2)} lei`;
+
+        rezultatDiv.textContent = mesaj;
+    });
+
+    genereazaButoaneNote();
+</script>
+
+</body>
+</html>
