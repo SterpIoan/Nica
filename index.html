@@ -200,7 +200,7 @@
         link.addEventListener('click', e => {
             e.preventDefault();
             elevCurent = link.dataset.elev;
-            titluElev.textContent = "Cote pentru elevul: " + numeElevi[elevCurent];
+            titluElev.textContent = "Cote pentru elevul: " + elevCurent;
             afiseazaTabelCote(elevCurent);
             tabelCote.style.display = 'table';
             sectiunePariu.style.display = 'block';
